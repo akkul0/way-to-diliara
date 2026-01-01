@@ -10,30 +10,41 @@
     <style>
         body {
             background-color: #111;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            overflow: hidden; /* Sayfa kaydırmayı engelle */
             color: white;
             font-family: 'Press Start 2P', cursive;
-            overflow: hidden;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             touch-action: none;
         }
 
-        #game-screen {
-            position: relative;
+        /* OYUN ALANI (SABİT 800x600) */
+        /* JS ile scale edilerek ekrana sığdırılacak */
+        #game-container {
             width: 800px;
             height: 600px;
-            max-width: 100vw;
-            max-height: 100vh;
-            aspect-ratio: 4 / 3; 
-            border: 2px solid #444;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-screen {
+            position: absolute;
+            width: 800px;
+            height: 600px;
+            border: 4px solid #444;
             background-color: #000;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.9);
+            box-shadow: 0 0 50px rgba(0,0,0,0.9);
+            box-sizing: border-box; /* Border dahil boyutlandırma */
         }
 
         .game-obj {
@@ -68,7 +79,7 @@
             margin-bottom: 20px;
             position: relative;
             z-index: 5001;
-            transform: scale(0.8);
+            transform: scale(0.9); /* Mobilde biraz küçültelim */
         }
 
         h1.title {
@@ -125,10 +136,10 @@
         /* --- UI ELEMENTS --- */
         #dialogue-box {
             position: absolute;
-            bottom: 120px;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            width: 80%;
+            width: 90%;
             background: rgba(0, 0, 0, 0.95);
             border: 3px solid #fff;
             padding: 15px;
@@ -139,6 +150,7 @@
             box-shadow: 0 0 20px rgba(255,255,255,0.2);
             color: #ffff55;
             pointer-events: none;
+            box-sizing: border-box;
         }
 
         #end-screen {
@@ -154,18 +166,25 @@
             pointer-events: auto;
         }
         
-        /* --- MOBİL KONTROLLER --- */
-        #mobile-controls {
+        /* --- MOBİL KONTROLLER (UI Üstüne bindirme) --- */
+        /* Kontrolleri game-screen'in dışına, ekranın en altına koyacağız */
+        #ui-layer {
             position: fixed;
-            bottom: 20px;
-            left: 0;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; /* Arkadaki oyuna dokunmayı engelleme */
+            z-index: 9000;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        #mobile-controls {
             width: 100%;
             display: flex;
             justify-content: space-between;
-            padding: 0 20px;
+            padding: 20px;
             box-sizing: border-box;
-            z-index: 9000;
-            pointer-events: none;
+            padding-bottom: 40px; /* Alttan biraz boşluk */
         }
         
         .d-pad {
@@ -177,104 +196,133 @@
         
         .action-btn-container {
             pointer-events: auto;
+            display: flex;
+            align-items: flex-end;
         }
         
         .ctrl-btn {
             width: 60px; height: 60px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
             color: white;
             font-size: 24px;
             display: flex; justify-content: center; align-items: center;
             user-select: none;
             touch-action: none;
+            backdrop-filter: blur(2px);
         }
-        .ctrl-btn:active { background: rgba(255, 255, 255, 0.5); }
+        .ctrl-btn:active { background: rgba(255, 255, 255, 0.4); transform: scale(0.95); }
         
         #btn-up { grid-column: 2; grid-row: 1; }
         #btn-left { grid-column: 1; grid-row: 2; }
         #btn-down { grid-column: 2; grid-row: 2; }
         #btn-right { grid-column: 3; grid-row: 2; }
-        #btn-action { width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 50, 50, 0.4); font-size: 20px; }
+        #btn-action { width: 80px; height: 80px; border-radius: 50%; background: rgba(200, 50, 50, 0.5); font-size: 20px; border: 3px solid rgba(255,255,255,0.5); }
         
     </style>
 </head>
 <body>
 
-    <div id="game-screen">
-        
-        <div id="main-menu">
-            <div class="title-container">
-                <img src="https://i.imgur.com/ISiHksj.png" class="menu-char">
-                <h1 class="title">Way to<br>Diliara</h1>
-                <img src="https://i.imgur.com/kbKi5Q3.png" class="menu-char">
-            </div>
+    <div id="game-container">
+        <div id="game-screen">
             
-            <button class="menu-btn" onclick="startGame()">PLAY</button>
-            
-            <div class="settings-area">
-                <div style="margin-bottom: 15px; font-size: 12px;">VOLUME</div>
-                <input type="range" min="0" max="100" value="50" oninput="updateVolume(this.value)">
+            <div id="main-menu">
+                <div class="title-container">
+                    <img src="https://i.imgur.com/ISiHksj.png" class="menu-char">
+                    <h1 class="title">Way to<br>Diliara</h1>
+                    <img src="https://i.imgur.com/kbKi5Q3.png" class="menu-char">
+                </div>
                 
-                <div style="margin-top: 20px; margin-bottom: 10px; font-size: 12px;">LANGUAGE / ЯЗЫК</div>
-                <button class="lang-btn active" id="btn-tr" onclick="setLanguage('tr')">TR</button>
-                <button class="lang-btn" id="btn-ru" onclick="setLanguage('ru')">RU</button>
+                <button class="menu-btn" onclick="startGame()">PLAY</button>
+                
+                <div class="settings-area">
+                    <div style="margin-bottom: 15px; font-size: 12px;">VOLUME</div>
+                    <input type="range" min="0" max="100" value="50" oninput="updateVolume(this.value)">
+                    
+                    <div style="margin-top: 20px; margin-bottom: 10px; font-size: 12px;">LANGUAGE / ЯЗЫК</div>
+                    <button class="lang-btn active" id="btn-tr" onclick="setLanguage('tr')">TR</button>
+                    <button class="lang-btn" id="btn-ru" onclick="setLanguage('ru')">RU</button>
+                </div>
             </div>
-        </div>
 
-        <div id="dialogue-box"></div>
-        
-        <div id="end-screen">
-            <h1 style="color:red; font-size:40px; text-shadow: 2px 2px white;">THE END</h1>
-            <p id="end-msg" style="margin-top:20px; color:#aaa; font-size:12px;">Yenile / Refresh</p>
-        </div>
-
-        <div id="scene-room" style="display:none;">
-            <img src="https://i.imgur.com/diWxiuE.jpeg" class="bg game-obj">
-            <img src="https://i.imgur.com/v88be8h.png" class="item game-obj" id="door" style="left: 350px; top: 20px; width: 100px;">
-            <img src="https://i.imgur.com/JCkBv60.png" class="item game-obj" id="pc" style="left: 100px; top: 100px; width: 80px;">
-            <img src="https://i.imgur.com/Fq47Yth.png" class="item game-obj" id="mirror" style="left: 650px; top: 100px; width: 60px;">
-            <img src="https://i.imgur.com/LI0NoFN.png" class="item game-obj" id="parrot" style="left: 650px; top: 400px; width: 50px;">
-            <img src="https://i.imgur.com/vW8L2uI.png" class="item game-obj" id="bed" style="left: 80px; top: 400px; width: 120px;">
-            <img src="https://i.imgur.com/8jrIOOf.png" class="item game-obj" id="key" style="left: 280px; top: 480px; width: 40px; display: none;">
-        </div>
-
-        <div id="scene-forest" style="display: none;">
-            <img src="https://i.imgur.com/nNj5BlY.jpeg" class="bg game-obj">
-            <div class="game-obj" style="left: 0; top: 250px; width: 800px; height: 120px; background: url('https://i.imgur.com/fY9rtJK.jpeg'); z-index: 2; background-size: contain;"></div>
-            <img src="https://i.imgur.com/cOqc5cO.png" class="item game-obj" id="gate" style="left: 770px; top: 260px; width: 56px; height: 140px; z-index: 3;">
-            <img src="https://i.imgur.com/9NXv97l.png" class="item game-obj" id="dubai" style="left: 630px; top: 200px; width: 112px; z-index: 4;">
-            <img src="https://i.imgur.com/LXXJ4Vd.png" class="item game-obj" id="macchiato" style="left: 0; top: 0; width: 40px; display: none; z-index: 5;">
+            <div id="dialogue-box"></div>
             
-            <img src="https://i.imgur.com/vtNrMTn.png" class="item game-obj tree" style="left: 50px; top: 50px; width: 100px;">
-            <img src="https://i.imgur.com/vtNrMTn.png" class="item game-obj tree" style="left: 250px; top: 450px; width: 100px;">
-            <img src="https://i.imgur.com/vtNrMTn.png" class="item game-obj tree" style="left: 450px; top: 50px; width: 100px;">
-            <img src="https://i.imgur.com/vtNrMTn.png" class="item game-obj tree" style="left: 500px; top: 450px; width: 100px;">
-        </div>
+            <div id="end-screen">
+                <h1 style="color:red; font-size:40px; text-shadow: 2px 2px white;">THE END</h1>
+                <p id="end-msg" style="margin-top:20px; color:#aaa; font-size:12px;">Yenile / Refresh</p>
+            </div>
 
-        <div id="scene-final" style="display: none;">
-            <img src="https://i.imgur.com/nNj5BlY.jpeg" class="bg game-obj">
-            <div id="flower-container"></div>
-            <img src="https://i.imgur.com/ISiHksj.png" class="item game-obj" id="female" style="left: 600px; top: 250px; width: 90px; z-index: 5;">
-        </div>
+            <div id="scene-room" style="display:none;">
+                <img src="https://i.imgur.com/diWxiuE.jpeg" class="bg game-obj">
+                <img src="https://i.imgur.com/v88be8h.png" class="item game-obj" id="door" style="left: 350px; top: 20px; width: 100px;">
+                <img src="https://i.imgur.com/JCkBv60.png" class="item game-obj" id="pc" style="left: 100px; top: 100px; width: 80px;">
+                <img src="https://i.imgur.com/Fq47Yth.png" class="item game-obj" id="mirror" style="left: 650px; top: 100px; width: 60px;">
+                <img src="https://i.imgur.com/LI0NoFN.png" class="item game-obj" id="parrot" style="left: 650px; top: 400px; width: 50px;">
+                <img src="https://i.imgur.com/vW8L2uI.png" class="item game-obj" id="bed" style="left: 80px; top: 400px; width: 120px;">
+                <img src="https://i.imgur.com/8jrIOOf.png" class="item game-obj" id="key" style="left: 280px; top: 480px; width: 40px; display: none;">
+            </div>
 
-        <img src="https://i.imgur.com/kbKi5Q3.png" class="character game-obj" id="player" style="left: 200px; top: 400px; display:none;">
+            <div id="scene-forest" style="display: none;">
+                <img src="https://i.imgur.com/nNj5BlY.jpeg" class="bg game-obj">
+                <div class="game-obj" style="left: 0; top: 250px; width: 800px; height: 120px; background: url('https://i.imgur.com/fY9rtJK.jpeg'); z-index: 2; background-size: contain;"></div>
+                <img src="https://i.imgur.com/cOqc5cO.png" class="item game-obj" id="gate" style="left: 770px; top: 260px; width: 56px; height: 140px; z-index: 3;">
+                <img src="https://i.imgur.com/9NXv97l.png" class="item game-obj" id="dubai" style="left: 630px; top: 200px; width: 112px; z-index: 4;">
+                <img src="https://i.imgur.com/LXXJ4Vd.png" class="item game-obj" id="macchiato" style="left: 0; top: 0; width: 40px; display: none; z-index: 5;">
+                
+                <img src="https://i.imgur.com/vtNrMTn.png" class="item game-obj tree" style="left: 50px; top: 50px; width: 100px;">
+                <img src="https://i.imgur.com/vtNrMTn.png" class="item game-obj tree" style="left: 250px; top: 450px; width: 100px;">
+                <img src="https://i.imgur.com/vtNrMTn.png" class="item game-obj tree" style="left: 450px; top: 50px; width: 100px;">
+                <img src="https://i.imgur.com/vtNrMTn.png" class="item game-obj tree" style="left: 500px; top: 450px; width: 100px;">
+            </div>
+
+            <div id="scene-final" style="display: none;">
+                <img src="https://i.imgur.com/nNj5BlY.jpeg" class="bg game-obj">
+                <div id="flower-container"></div>
+                <img src="https://i.imgur.com/ISiHksj.png" class="item game-obj" id="female" style="left: 600px; top: 250px; width: 90px; z-index: 5;">
+            </div>
+
+            <img src="https://i.imgur.com/kbKi5Q3.png" class="character game-obj" id="player" style="left: 200px; top: 400px; display:none;">
+        </div>
     </div>
 
-    <div id="mobile-controls">
-        <div class="d-pad">
-            <div class="ctrl-btn" id="btn-up">↑</div>
-            <div class="ctrl-btn" id="btn-left">←</div>
-            <div class="ctrl-btn" id="btn-down">↓</div>
-            <div class="ctrl-btn" id="btn-right">→</div>
-        </div>
-        <div class="action-btn-container">
-            <div class="ctrl-btn" id="btn-action">A</div>
+    <div id="ui-layer">
+        <div id="mobile-controls">
+            <div class="d-pad">
+                <div class="ctrl-btn" id="btn-up">↑</div>
+                <div class="ctrl-btn" id="btn-left">←</div>
+                <div class="ctrl-btn" id="btn-down">↓</div>
+                <div class="ctrl-btn" id="btn-right">→</div>
+            </div>
+            <div class="action-btn-container">
+                <div class="ctrl-btn" id="btn-action">A</div>
+            </div>
         </div>
     </div>
 
 <script>
+    // --- EKRAN ÖLÇEKLEME (RESPONSIVE FIX) ---
+    function resizeGame() {
+        const gameContainer = document.getElementById('game-container');
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        // Oyunun orijinal boyutları
+        const targetWidth = 800;
+        const targetHeight = 600;
+        
+        // Ölçek hesapla (Hem genişlik hem yüksekliğe sığacak şekilde)
+        const scale = Math.min(width / targetWidth, height / targetHeight);
+        
+        // Konteyneri ölçekle
+        gameContainer.style.transform = `scale(${scale})`;
+    }
+
+    // Sayfa yüklendiğinde ve boyut değiştiğinde tetikle
+    window.addEventListener('load', resizeGame);
+    window.addEventListener('resize', resizeGame);
+
+
     // --- SES SİSTEMİ ---
     let sounds = {};
     let soundEnabled = true;
@@ -306,7 +354,7 @@
         });
     }
 
-    // --- ORİJİNAL DİYALOGLAR GERİ GETİRİLDİ ---
+    // --- ORİJİNAL DUYGUSAL/DELİKANLI DİYALOGLAR ---
     const texts = {
         tr: {
             play: "OYNA",
@@ -467,6 +515,7 @@
     function startGame() {
         setupControls();
         gameLoop();
+        resizeGame(); // Başlarken de boyutlandır
         
         gameStarted = true;
         document.getElementById('main-menu').style.display = 'none';
