@@ -8,7 +8,6 @@
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        /* Mobil için kaydırmayı ve seçimleri engelle */
         body {
             background-color: #111;
             display: flex;
@@ -21,17 +20,15 @@
             overflow: hidden;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            touch-action: none; /* Çift dokunma zoom'unu engelle */
+            touch-action: none;
         }
 
         #game-screen {
             position: relative;
-            width: 800px; /* Oyunun iç çözünürlüğü */
+            width: 800px;
             height: 600px;
-            /* Mobilde ekranın dışına taşmaması için max-width/height */
             max-width: 100vw;
             max-height: 100vh;
-            /* En boy oranını koru */
             aspect-ratio: 4 / 3; 
             border: 2px solid #444;
             background-color: #000;
@@ -39,12 +36,10 @@
             box-shadow: 0 0 20px rgba(0,0,0,0.9);
         }
 
-        /* OYUN NESNELERİ STİLİ */
         .game-obj {
             image-rendering: pixelated; 
             position: absolute; 
             transition: transform 0.2s;
-            /* Mobilde görsellerin sürüklenmesini engelle */
             pointer-events: none; 
         }
 
@@ -63,7 +58,7 @@
             justify-content: center;
             align-items: center;
             text-align: center;
-            pointer-events: auto; /* Menü tıklanabilir olsun */
+            pointer-events: auto;
         }
 
         .title-container {
@@ -73,7 +68,6 @@
             margin-bottom: 20px;
             position: relative;
             z-index: 5001;
-             /* Mobilde başlık sığsın diye küçült */
             transform: scale(0.8);
         }
 
@@ -110,7 +104,7 @@
             padding: 15px;
             border: 2px solid #666;
             border-radius: 10px;
-            transform: scale(0.9); /* Mobilde ayarlar sığsın */
+            transform: scale(0.9);
         }
 
         .lang-btn {
@@ -131,10 +125,10 @@
         /* --- UI ELEMENTS --- */
         #dialogue-box {
             position: absolute;
-            bottom: 120px; /* Kontrollerin üstünde kalsın */
+            bottom: 120px;
             left: 50%;
             transform: translateX(-50%);
-            width: 80%; /* Mobilde taşmaması için yüzde */
+            width: 80%;
             background: rgba(0, 0, 0, 0.95);
             border: 3px solid #fff;
             padding: 15px;
@@ -171,14 +165,14 @@
             padding: 0 20px;
             box-sizing: border-box;
             z-index: 9000;
-            pointer-events: none; /* Kapsayıcı tıklanmasın */
+            pointer-events: none;
         }
         
         .d-pad {
             display: grid;
             grid-template-columns: 60px 60px 60px;
             grid-template-rows: 60px 60px;
-            pointer-events: auto; /* Tuşlar tıklansın */
+            pointer-events: auto;
         }
         
         .action-btn-container {
@@ -203,11 +197,6 @@
         #btn-down { grid-column: 2; grid-row: 2; }
         #btn-right { grid-column: 3; grid-row: 2; }
         #btn-action { width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 50, 50, 0.4); font-size: 20px; }
-        
-        /* PC'de oynarken mobil kontrolleri gizle (isteğe bağlı) */
-        @media (min-width: 1024px) {
-            /* #mobile-controls { display: none; } */
-        }
         
     </style>
 </head>
@@ -295,7 +284,6 @@
             bgmMain: new Audio('https://opengameart.org/sites/default/files/TownTheme.mp3'),
             bgmFinal: new Audio('https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg'),
             blip: new Audio('https://commondatastorage.googleapis.com/codeskulptor-assets/week7-brrring.m4a'),
-            // PAPAĞAN SESİ KALDIRILDI
             monster: new Audio('https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/6.ogg'),
             pickup: new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'), 
             door: new Audio('https://assets.mixkit.co/active_storage/sfx/192/192-preview.mp3') 
@@ -318,26 +306,49 @@
         });
     }
 
+    // --- ORİJİNAL DİYALOGLAR GERİ GETİRİLDİ ---
     const texts = {
         tr: {
-            play: "OYNA", menu_title: "Way to<br>Diliara",
-            intro1: "(Başın çatlıyor...)", intro2: "Diliara... Seni bulmam gerek!", intro3: "Önce bu odadan çıkmalıyım.",
-            pc: "Ekran paramparça...", mirror: "Aynalar bile düşman.", parrot: "...", // Papağan sessiz
-            bed: "Uyumak çözüm değil.", door_locked: "Kilitli... Anahtar nerede?", key_found: "Anahtarı buldum!",
-            dubai_stop: "Hop hemşerim! Canım Macchiato çekiyor...", dubai_quest: "Bana Macchiato getir, geç.",
-            dubai_success: "Kralsın. Geç bakalım.", dubai_gate_blocked: "Önce bekçiyi halletmeliyim.",
-            macchiato_found: "Mis gibi Macchiato!", final_name: "Diliara...",
-            final_love: "Her zaman seninle olacağım.", end_msg: "Tekrar Oyna"
+            play: "OYNA",
+            menu_title: "Way to<br>Diliara",
+            intro1: "(Başın çatlıyor... Gözlerini zorlukla açtın...)",
+            intro2: "Diliara... Diliara neredesin prensesim? Seni bulmam gerek!",
+            intro3: "Önce bu odadan çıkmalıyım.",
+            pc: "Ekran paramparça... Tıpkı kalbim gibi.",
+            mirror: "O yanımda yokken aynalar bile düşman bana.",
+            parrot: "Sus artık! 'Diliara' demeyi kes, üzülüyorum.",
+            bed: "Uyumak çözüm değil. Onu bulmalıyım.",
+            door_locked: "Kilitli... Anahtarı buralarda bir yere koymuş olmalıyım.",
+            key_found: "Anahtarı buldum! Artık çıkabilirim.",
+            dubai_stop: "Hop hemşerim nereye? Buradan geçiş yok! Canım fena halde soğuk bir Macchiato çekiyor...",
+            dubai_quest: "Bana ormandan bir Macchiato bulup getirirsen, kıyağımı yaparım.",
+            dubai_success: "Ooo işte bu! Kralsın. Geç bakalım aşık çocuk, yolun açık olsun.",
+            dubai_gate_blocked: "Önce şu çikolata kılıklı bekçiyi halletmeliyim.",
+            macchiato_found: "Mis gibi Macchiato! Canavar bunu sevecek.",
+            final_name: "Diliara...",
+            final_love: "Ne kadar zor olursa olsun, her zaman seninle olacağım.",
+            end_msg: "Tekrar Oyna (F5)"
         },
         ru: {
-            play: "ИГРАТЬ", menu_title: "Путь к<br>Дилиаре",
-            intro1: "(Голова раскалывается...)", intro2: "Дилиара... Я должен найти тебя!", intro3: "Нужно выбраться.",
-            pc: "Экран разбит...", mirror: "Зеркала враги.", parrot: "...",
-            bed: "Сон не выход.", door_locked: "Заперто... Где ключ?", key_found: "Ключ у меня!",
-            dubai_stop: "Опа, стоять! Хочу макиато...", dubai_quest: "Принеси макиато, пущу.",
-            dubai_success: "Красава. Проходи.", dubai_gate_blocked: "Сначала охранник.",
-            macchiato_found: "Отличный макиато!", final_name: "Дилиара...",
-            final_love: "Я всегда буду с тобой.", end_msg: "Играть снова"
+            play: "ИГРАТЬ",
+            menu_title: "Путь к<br>Дилиаре",
+            intro1: "(Голова раскалывается... Ты с трудом открываешь глаза...)",
+            intro2: "Дилиара... Дилиара, где ты, моя принцесса? Я должен найти тебя!",
+            intro3: "Сначала нужно выбраться из этой комнаты.",
+            pc: "Экран разбит вдребезги... Как и мое сердце.",
+            mirror: "Без неё даже зеркала — мои враги.",
+            parrot: "Замолчи! Хватит повторять 'Дилиара', мне больно.",
+            bed: "Сон — не выход. Я должен найти её.",
+            door_locked: "Заперто... Ключ должен быть где-то здесь.",
+            key_found: "Ключ у меня! Теперь я могу выйти.",
+            dubai_stop: "Опа, стоять! Куда лыжи навострил? Прохода нет. Слышь, братан, душа горит, кофе хочет...",
+            dubai_quest: "Принеси-ка мне макиато из леса, а я подумаю, пускать тебя или нет.",
+            dubai_success: "Во! Красава! Уважаю. Проходи, Ромео, путь свободен.",
+            dubai_gate_blocked: "Сначала нужно разобраться с этим шоколадным охранником.",
+            macchiato_found: "Отличный макиато! Монстру это понравится.",
+            final_name: "Дилиара...",
+            final_love: "Как бы ни было трудно, я всегда буду с тобой.",
+            end_msg: "Играть снова (F5)"
         }
     };
 
@@ -347,7 +358,7 @@
     
     let posX = 200;
     let posY = 400;
-    const speed = 4; // Game loop için hız düşürüldü (her karede 4px)
+    const speed = 4;
     let currentScene = 1; 
     let isTalking = false;
     let gameStarted = false;
@@ -362,11 +373,10 @@
         down: 'https://i.imgur.com/debi3sf.png'
     };
 
-    // --- YENİ GİRİŞ SİSTEMİ (Klavye + Dokunmatik) ---
+    // --- KONTROLLER ---
     const input = { up: false, down: false, left: false, right: false, action: false };
 
     function setupControls() {
-        // KLAVYE
         window.addEventListener('keydown', (e) => {
             if(e.key === 'ArrowUp') input.up = true;
             if(e.key === 'ArrowDown') input.down = true;
@@ -383,12 +393,10 @@
             if(gameStarted) player.src = anims.idle;
         });
 
-        // DOKUNMATİK (Mobilde basılı tutmayı algılamak için)
         const assignTouch = (id, key) => {
             const btn = document.getElementById(id);
             btn.addEventListener('touchstart', (e) => { e.preventDefault(); input[key] = true; });
             btn.addEventListener('touchend', (e) => { e.preventDefault(); input[key] = false; if(gameStarted && key!=='action') player.src = anims.idle; });
-            // PC'de mouse ile test etmek için
             btn.addEventListener('mousedown', (e) => { input[key] = true; });
             btn.addEventListener('mouseup', (e) => { input[key] = false; if(gameStarted && key!=='action') player.src = anims.idle; });
         };
@@ -399,7 +407,7 @@
         assignTouch('btn-action', 'action');
     }
 
-    // --- OYUN DÖNGÜSÜ (Game Loop) ---
+    // --- GAME LOOP ---
     function gameLoop() {
         if (gameStarted && !isTalking) {
             let moved = false;
@@ -410,14 +418,12 @@
             
             if (input.action) {
                 checkInteraction();
-                input.action = false; // Tek seferlik basım için
+                input.action = false;
             }
 
-            // Sınır Kontrolü
             const playerSize = currentScene === 3 ? 120 : 64;
             if (posX < 0) posX = 0;
             if (posY < 0) posY = 0;
-            // 800x600 oyun alanı sınırları
             if (posX > 800 - playerSize) posX = 800 - playerSize;
             if (posY > 600 - playerSize) posY = 600 - playerSize;
 
@@ -427,7 +433,6 @@
     }
 
     function updatePlayerPos() {
-        // Karakteri oyun ekranına göre konumlandır
         player.style.left = posX + 'px';
         player.style.top = posY + 'px';
     }
@@ -460,14 +465,13 @@
     }
 
     function startGame() {
-        setupControls(); // Kontrolleri başlat
-        gameLoop(); // Oyun döngüsünü başlat
+        setupControls();
+        gameLoop();
         
         gameStarted = true;
         document.getElementById('main-menu').style.display = 'none';
         document.getElementById('scene-room').style.display = 'block';
         player.style.display = 'block';
-        // Mobil kontrolleri göster
         document.getElementById('mobile-controls').style.display = 'flex';
 
         if(soundEnabled) {
@@ -484,12 +488,11 @@
     }
 
     function checkInteraction() {
-        // SAHNE 1
         if (currentScene === 1) {
             if (isColliding('pc')) showDialogue(texts[lang].pc);
             else if (isColliding('mirror')) showDialogue(texts[lang].mirror);
             else if (isColliding('parrot')) {
-                // SES KALDIRILDI
+                // SES YOK
                 showDialogue(texts[lang].parrot);
             }
             else if (isColliding('bed')) showDialogue(texts[lang].bed);
@@ -501,7 +504,6 @@
                 playSfx('pickup'); document.getElementById('key').style.display = 'none'; hasKey = true; showDialogue(texts[lang].key_found);
             }
         }
-        // SAHNE 2
         else if (currentScene === 2) {
             if (isColliding('dubai')) {
                 playSfx('monster');
@@ -519,7 +521,6 @@
                 else showDialogue(texts[lang].dubai_gate_blocked);
             }
         }
-        // SAHNE 3
         else if (currentScene === 3) {
             if (isColliding('female')) {
                 showDialogue(texts[lang].final_name, () => {
@@ -589,7 +590,6 @@
         updatePlayerPos();
     }
 
-    // PWA Service Worker Kaydı
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
