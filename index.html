@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <title>Way to Diliara</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Mobil için kaydırmayı ve seçimleri engelle */
+        body {
+            background-color: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none; /* Çift dokunma zoom'unu engelle */
+        }
+
+        #game-screen {
+            position: relative;
+            width: 800px; /* Oyunun iç çözünürlüğü */
+            height: 600px;
+            /* Mobilde ekranın dışına taşmaması için max-width/height */
+            max-width: 100vw;
+            max-height: 100vh;
+            /* En boy oranını koru */
+            aspect-ratio: 4 / 3; 
+            border: 2px solid #444;
+            background-color: #000;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.9);
+        }
+
+        /* OYUN NESNELERİ STİLİ */
+        .game-obj {
+            image-rendering: pixelated; 
+            position: absolute; 
+            transition: transform 0.2s;
+            /* Mobilde görsellerin sürüklenmesini engelle */
+            pointer-events: none; 
+        }
+
+        .character { z-index: 100; width: 64px; height: 64px; }
+        .item { z-index: 50; }
+        .bg { z-index: 1; width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- MAIN MENU STYLES --- */
+        #main-menu {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(20, 20, 20, 1);
+            z-index: 5000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            pointer-events: auto; /* Menü tıklanabilir olsun */
+        }
+
+        .title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 5001;
+             /* Mobilde başlık sığsın diye küçült */
+            transform: scale(0.8);
+        }
+
+        h1.title {
+            font-size: 30px;
+            color: #ffcc00;
+            text-shadow: 3px 3px #c0392b;
+            margin: 0 10px;
+            line-height: 1.5;
+        }
+
+        .menu-char { width: 80px; height: 80px; image-rendering: pixelated; position: static; }
+
+        .menu-btn {
+            position: relative;
+            z-index: 6000;
+            background: #c0392b;
+            color: white;
+            border: 3px solid #fff;
+            padding: 10px 20px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            pointer-events: auto;
+        }
+        .menu-btn:active { transform: scale(0.9); background: #e74c3c; }
+
+        .settings-area {
+            position: relative;
+            z-index: 6000;
+            margin-top: 20px;
+            background: #333;
+            padding: 15px;
+            border: 2px solid #666;
+            border-radius: 10px;
+            transform: scale(0.9); /* Mobilde ayarlar sığsın */
+        }
+
+        .lang-btn {
+            background: #444;
+            border: 2px solid #888;
+            color: #fff;
+            padding: 5px 10px;
+            font-family: 'Press Start 2P';
+            margin: 0 5px;
+            position: relative;
+            z-index: 6001;
+            pointer-events: auto;
+        }
+        .lang-btn.active { background: #ffcc00; color: #000; border-color: #fff; }
+
+        input[type=range] { width: 150px; margin-top: 10px; position: relative; z-index: 6001; pointer-events: auto;}
+
+        /* --- UI ELEMENTS --- */
+        #dialogue-box {
+            position: absolute;
+            bottom: 120px; /* Kontrollerin üstünde kalsın */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%; /* Mobilde taşmaması için yüzde */
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #fff;
+            padding: 15px;
+            display: none;
+            z-index: 1000;
+            font-size: 14px; 
+            line-height: 1.6;
+            box-shadow: 0 0 20px rgba(255,255,255,0.2);
+            color: #ffff55;
+            pointer-events: none;
+        }
+
+        #end-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            text-align: center;
+            pointer-events: auto;
+        }
+        
+        /* --- MOBİL KONTROLLER --- */
+        #mobile-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+            z-index: 9000;
+            pointer-events: none; /* Kapsayıcı tıklanmasın */
+        }
+        
+        .d-pad {
+            display: grid;
+            grid-template-columns: 60px 60px 60px;
+            grid-template-rows: 60px 60px;
+            pointer-events: auto; /* Tuşlar tıklansın */
+        }
+        
+        .action-btn-container {
+            pointer-events: auto;
+        }
+        
+        .ctrl-btn {
+            width: 60px; height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 10px;
+            color: white;
+            font-size: 24px;
+            display: flex; justify-content: center; align-items: center;
+            user-select: none;
+            touch-action: none;
+        }
+        .ctrl-btn:active { background: rgba(255, 255, 255, 0.5); }
+        
+        #btn-up { grid-column: 2; grid-row: 1; }
+        #btn-left { grid-column: 1; grid-row: 2; }
+        #btn-down { grid-column: 2; grid-row: 2; }
+        #btn-right { grid-column: 3; grid-row: 2; }
+        #btn-action { width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 50, 50, 0.4); font-size: 20px; }
+        
+        /* PC'de oynarken mobil kontrolleri gizle (isteğe bağlı) */
+        @media (min-width: 1024px) {
+            /* #mobile-controls { display: none; } */
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div id="game-screen">
+        
+        <div id="main-menu">
+            <div class="title-container">
+                <img src="https://i.imgur.com/ISiHksj.png" class="menu-char">
+                <h1 class="title">Way to<br>Diliara</h1>
+                <img src="https://i.imgur.com/kbKi5Q3.png" class="menu-char">
+            </div>
+            
+            <button class="menu-btn" onclick="startGame()">PLAY</button>
+            
+            <div class="settings-area">
+                <div style="margin-bottom: 15px; font-size: 12px;">VOLUME</div>
+                <input type="range" min="0" max="100" value="50" oninput="updateVolume(this.value)">
+                
+                <div style="margin-top: 20px; margin-bottom: 10px; font-size: 12px;">LANGUAGE / ЯЗЫК</div>
+                <button class="lang-btn active" id="btn-tr" onclick="setLanguage('tr')">TR</button>
+                <button class="lang-btn" id="btn-ru" onclick="setLanguage('ru')">RU</button>
+            </div>
+        </div>
+
+        <div id="dialogue-box"></div>
+        
+        <div id="end-screen">
+            <h1 style="color:red; font-size:40px; text-shadow: 2px 2px white;">THE END</h1>
+            <p id="end-msg" style="margin-top:20px; color:#aaa; font-size:12px;">Yenile / Refresh</p>
+        </div>
+
+        <div id="scene-room" style="display:none;">
+            <img src="https://i.imgur.com/diWxiuE.jpeg" class="bg game-obj">
+            <img src="https://i.imgur.com/v88be8h.png" class="item game-obj" id="door" style="left: 350px; top: 20px; width: 100px;">
+            <img src="https://i.imgur.com/JCkBv60.png" class="item game-obj" id="pc" style="left: 100px; top: 100px; width: 80px;">
+            <img src="https://i.imgur.com/Fq47Yth.png" class="item game-obj" id="mirror" style="left: 650px; top: 100px; width: 60px;">
+            <img src="https://i.imgur.com/LI0NoFN.png" class="item game-obj" id="parrot" style="left: 650px; top: 400px; width: 50px;">
+            <img src="https://i.imgur.com/vW8L2uI.png" class="item game-obj" id="bed" style="left: 80px; top: 400px; width: 120px;">
+            <img src="https://i.imgur.com/8jrIOOf.png" class="item game-obj" id="key" style="left: 280px; top: 480px; width: 40px; display: none;">
+        </div>
+
+        <div id="scene-forest" style="display: none;">
+            <img src="https://i.imgur.com/nNj5BlY.jpeg" class="bg game-obj">
+            <div class="game-obj" style="left: 0; top: 250px; width: 800px; height: 120px; background: url('https://i.imgur.com/fY9rtJK.jpeg'); z-index: 2; background-size: contain;"></div>
+            <img src="https://i.imgur.com/cOqc5cO.png" class="item game-obj" id="gate" style="left: 770px; top: 260px; width: 56px; height: 140px; z-index: 3;">
+            <img src="https://i.imgur.com/9NXv97l.png" class="item game-obj" id="dubai" style="left: 630px; top: 200px; width: 112px; z-index: 4;">
+            <img src="https://i.imgur.com/LXXJ4Vd.png" class="item game-obj" id="macchiato" style="left: 0; top: 0; width: 40px; display: none; z-index: 5;">
+            
+            <img src="https://i.imgur.com/vtNrMTn.png" class="item game-obj tree" style="left: 50px; top: 50px; width: 100px;">
+            <img src="https://i.imgur.com/vtNrMTn.png" class="item game-obj tree" style="left: 250px; top: 450px; width: 100px;">
+            <img src="https://i.imgur.com/vtNrMTn.png" class="item game-obj tree" style="left: 450px; top: 50px; width: 100px;">
+            <img src="https://i.imgur.com/vtNrMTn.png" class="item game-obj tree" style="left: 500px; top: 450px; width: 100px;">
+        </div>
+
+        <div id="scene-final" style="display: none;">
+            <img src="https://i.imgur.com/nNj5BlY.jpeg" class="bg game-obj">
+            <div id="flower-container"></div>
+            <img src="https://i.imgur.com/ISiHksj.png" class="item game-obj" id="female" style="left: 600px; top: 250px; width: 90px; z-index: 5;">
+        </div>
+
+        <img src="https://i.imgur.com/kbKi5Q3.png" class="character game-obj" id="player" style="left: 200px; top: 400px; display:none;">
+    </div>
+
+    <div id="mobile-controls">
+        <div class="d-pad">
+            <div class="ctrl-btn" id="btn-up">↑</div>
+            <div class="ctrl-btn" id="btn-left">←</div>
+            <div class="ctrl-btn" id="btn-down">↓</div>
+            <div class="ctrl-btn" id="btn-right">→</div>
+        </div>
+        <div class="action-btn-container">
+            <div class="ctrl-btn" id="btn-action">A</div>
+        </div>
+    </div>
+
+<script>
+    // --- SES SİSTEMİ ---
+    let sounds = {};
+    let soundEnabled = true;
+
+    try {
+        sounds = {
+            bgmMain: new Audio('https://opengameart.org/sites/default/files/TownTheme.mp3'),
+            bgmFinal: new Audio('https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg'),
+            blip: new Audio('https://commondatastorage.googleapis.com/codeskulptor-assets/week7-brrring.m4a'),
+            // PAPAĞAN SESİ KALDIRILDI
+            monster: new Audio('https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/6.ogg'),
+            pickup: new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'), 
+            door: new Audio('https://assets.mixkit.co/active_storage/sfx/192/192-preview.mp3') 
+        };
+        sounds.bgmMain.loop = true;
+        sounds.bgmFinal.loop = true;
+        sounds.blip.volume = 0.3; 
+
+    } catch (e) {
+        console.log("Ses yükleme hatası:", e);
+        soundEnabled = false;
+    }
+
+    let lang = 'tr'; 
+    let globalVolume = 0.5;
+
+    if(soundEnabled) {
+        Object.values(sounds).forEach(s => {
+            if(s !== sounds.blip) s.volume = globalVolume;
+        });
+    }
+
+    const texts = {
+        tr: {
+            play: "OYNA", menu_title: "Way to<br>Diliara",
+            intro1: "(Başın çatlıyor...)", intro2: "Diliara... Seni bulmam gerek!", intro3: "Önce bu odadan çıkmalıyım.",
+            pc: "Ekran paramparça...", mirror: "Aynalar bile düşman.", parrot: "...", // Papağan sessiz
+            bed: "Uyumak çözüm değil.", door_locked: "Kilitli... Anahtar nerede?", key_found: "Anahtarı buldum!",
+            dubai_stop: "Hop hemşerim! Canım Macchiato çekiyor...", dubai_quest: "Bana Macchiato getir, geç.",
+            dubai_success: "Kralsın. Geç bakalım.", dubai_gate_blocked: "Önce bekçiyi halletmeliyim.",
+            macchiato_found: "Mis gibi Macchiato!", final_name: "Diliara...",
+            final_love: "Her zaman seninle olacağım.", end_msg: "Tekrar Oyna"
+        },
+        ru: {
+            play: "ИГРАТЬ", menu_title: "Путь к<br>Дилиаре",
+            intro1: "(Голова раскалывается...)", intro2: "Дилиара... Я должен найти тебя!", intro3: "Нужно выбраться.",
+            pc: "Экран разбит...", mirror: "Зеркала враги.", parrot: "...",
+            bed: "Сон не выход.", door_locked: "Заперто... Где ключ?", key_found: "Ключ у меня!",
+            dubai_stop: "Опа, стоять! Хочу макиато...", dubai_quest: "Принеси макиато, пущу.",
+            dubai_success: "Красава. Проходи.", dubai_gate_blocked: "Сначала охранник.",
+            macchiato_found: "Отличный макиато!", final_name: "Дилиара...",
+            final_love: "Я всегда буду с тобой.", end_msg: "Играть снова"
+        }
+    };
+
+    // --- OYUN DEĞİŞKENLERİ ---
+    const player = document.getElementById('player');
+    const dialogueBox = document.getElementById('dialogue-box');
+    
+    let posX = 200;
+    let posY = 400;
+    const speed = 4; // Game loop için hız düşürüldü (her karede 4px)
+    let currentScene = 1; 
+    let isTalking = false;
+    let gameStarted = false;
+
+    let hasKey = false; let keySpawned = false;
+    let hasMacchiato = false; let macchiatoSpawned = false;
+    let guardMoved = false;
+
+    const anims = {
+        idle: 'https://i.imgur.com/kbKi5Q3.png', right: 'https://i.imgur.com/vFNHkZ4.png',
+        left: 'https://i.imgur.com/xysu3D3.png', up: 'https://i.imgur.com/AtjW19E.png',
+        down: 'https://i.imgur.com/debi3sf.png'
+    };
+
+    // --- YENİ GİRİŞ SİSTEMİ (Klavye + Dokunmatik) ---
+    const input = { up: false, down: false, left: false, right: false, action: false };
+
+    function setupControls() {
+        // KLAVYE
+        window.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowUp') input.up = true;
+            if(e.key === 'ArrowDown') input.down = true;
+            if(e.key === 'ArrowLeft') input.left = true;
+            if(e.key === 'ArrowRight') input.right = true;
+            if(e.key === ' ') input.action = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            if(e.key === 'ArrowUp') input.up = false;
+            if(e.key === 'ArrowDown') input.down = false;
+            if(e.key === 'ArrowLeft') input.left = false;
+            if(e.key === 'ArrowRight') input.right = false;
+            if(e.key === ' ') input.action = false;
+            if(gameStarted) player.src = anims.idle;
+        });
+
+        // DOKUNMATİK (Mobilde basılı tutmayı algılamak için)
+        const assignTouch = (id, key) => {
+            const btn = document.getElementById(id);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); input[key] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); input[key] = false; if(gameStarted && key!=='action') player.src = anims.idle; });
+            // PC'de mouse ile test etmek için
+            btn.addEventListener('mousedown', (e) => { input[key] = true; });
+            btn.addEventListener('mouseup', (e) => { input[key] = false; if(gameStarted && key!=='action') player.src = anims.idle; });
+        };
+        assignTouch('btn-up', 'up');
+        assignTouch('btn-down', 'down');
+        assignTouch('btn-left', 'left');
+        assignTouch('btn-right', 'right');
+        assignTouch('btn-action', 'action');
+    }
+
+    // --- OYUN DÖNGÜSÜ (Game Loop) ---
+    function gameLoop() {
+        if (gameStarted && !isTalking) {
+            let moved = false;
+            if (input.left)  { posX -= speed; player.src = anims.left; moved = true; }
+            if (input.right) { posX += speed; player.src = anims.right; moved = true; }
+            if (input.up)    { posY -= speed; player.src = anims.up; moved = true; }
+            if (input.down)  { posY += speed; player.src = anims.down; moved = true; }
+            
+            if (input.action) {
+                checkInteraction();
+                input.action = false; // Tek seferlik basım için
+            }
+
+            // Sınır Kontrolü
+            const playerSize = currentScene === 3 ? 120 : 64;
+            if (posX < 0) posX = 0;
+            if (posY < 0) posY = 0;
+            // 800x600 oyun alanı sınırları
+            if (posX > 800 - playerSize) posX = 800 - playerSize;
+            if (posY > 600 - playerSize) posY = 600 - playerSize;
+
+            updatePlayerPos();
+        }
+        requestAnimationFrame(gameLoop);
+    }
+
+    function updatePlayerPos() {
+        // Karakteri oyun ekranına göre konumlandır
+        player.style.left = posX + 'px';
+        player.style.top = posY + 'px';
+    }
+
+    // --- DİĞER FONKSİYONLAR ---
+    function setLanguage(selectedLang) {
+        lang = selectedLang;
+        document.getElementById('btn-tr').className = lang === 'tr' ? 'lang-btn active' : 'lang-btn';
+        document.getElementById('btn-ru').className = lang === 'ru' ? 'lang-btn active' : 'lang-btn';
+        document.querySelector('.menu-btn').innerText = texts[lang].play;
+        document.querySelector('.title').innerHTML = texts[lang].menu_title;
+        document.getElementById('end-msg').innerText = texts[lang].end_msg;
+    }
+
+    function updateVolume(val) {
+        globalVolume = val / 100;
+        if(soundEnabled) {
+            Object.values(sounds).forEach(s => {
+                if(s === sounds.blip) s.volume = Math.min(globalVolume, 0.3);
+                else s.volume = globalVolume;
+            });
+        }
+    }
+
+    function playSfx(name) {
+        if(soundEnabled && sounds[name]) {
+            sounds[name].currentTime = 0; 
+            sounds[name].play().catch(e => console.log(e));
+        }
+    }
+
+    function startGame() {
+        setupControls(); // Kontrolleri başlat
+        gameLoop(); // Oyun döngüsünü başlat
+        
+        gameStarted = true;
+        document.getElementById('main-menu').style.display = 'none';
+        document.getElementById('scene-room').style.display = 'block';
+        player.style.display = 'block';
+        // Mobil kontrolleri göster
+        document.getElementById('mobile-controls').style.display = 'flex';
+
+        if(soundEnabled) {
+            sounds.bgmMain.play().catch(e => console.log("Oto-oynatma engellendi"));
+        }
+
+        setTimeout(() => {
+            showDialogue(texts[lang].intro1, () => {
+                showDialogue(texts[lang].intro2, () => {
+                    showDialogue(texts[lang].intro3);
+                });
+            });
+        }, 500);
+    }
+
+    function checkInteraction() {
+        // SAHNE 1
+        if (currentScene === 1) {
+            if (isColliding('pc')) showDialogue(texts[lang].pc);
+            else if (isColliding('mirror')) showDialogue(texts[lang].mirror);
+            else if (isColliding('parrot')) {
+                // SES KALDIRILDI
+                showDialogue(texts[lang].parrot);
+            }
+            else if (isColliding('bed')) showDialogue(texts[lang].bed);
+            else if (isColliding('door')) {
+                if (hasKey) { playSfx('door'); setTimeout(() => changeScene(2), 500); }
+                else showDialogue(texts[lang].door_locked, () => { if (!keySpawned) spawnKey(); });
+            }
+            else if (isColliding('key') && keySpawned) {
+                playSfx('pickup'); document.getElementById('key').style.display = 'none'; hasKey = true; showDialogue(texts[lang].key_found);
+            }
+        }
+        // SAHNE 2
+        else if (currentScene === 2) {
+            if (isColliding('dubai')) {
+                playSfx('monster');
+                if (hasMacchiato && !guardMoved) {
+                    showDialogue(texts[lang].dubai_success, () => { document.getElementById('dubai').style.top = '50px'; guardMoved = true; });
+                } else if (!guardMoved) {
+                    showDialogue(texts[lang].dubai_stop, () => { showDialogue(texts[lang].dubai_quest); if (!macchiatoSpawned) spawnMacchiato(); });
+                }
+            }
+            if (isColliding('macchiato') && macchiatoSpawned) {
+                playSfx('pickup'); document.getElementById('macchiato').style.display = 'none'; hasMacchiato = true; showDialogue(texts[lang].macchiato_found);
+            }
+            if (isColliding('gate')) {
+                if (guardMoved) { playSfx('door'); setTimeout(() => changeScene(3), 500); }
+                else showDialogue(texts[lang].dubai_gate_blocked);
+            }
+        }
+        // SAHNE 3
+        else if (currentScene === 3) {
+            if (isColliding('female')) {
+                showDialogue(texts[lang].final_name, () => {
+                    showDialogue(texts[lang].final_love, () => { document.getElementById('end-screen').style.display = 'flex'; });
+                });
+            }
+        }
+    }
+
+    function isColliding(targetId) {
+        const target = document.getElementById(targetId);
+        if (!target || target.style.display === 'none') return false;
+        const r1 = player.getBoundingClientRect();
+        const r2 = target.getBoundingClientRect();
+        let collisionDistance = currentScene === 3 ? 150 : 90;
+        return Math.hypot(r1.x - r2.x, r1.y - r2.y) < collisionDistance;
+    }
+
+    function showDialogue(text, callback) {
+        isTalking = true;
+        playSfx('blip');
+        dialogueBox.innerHTML = text;
+        dialogueBox.style.display = 'block';
+        let duration = text.length * 50 + 1500; 
+        if (duration < 2000) duration = 2000;
+        setTimeout(() => {
+            dialogueBox.style.display = 'none';
+            isTalking = false;
+            if (callback) callback();
+        }, duration);
+    }
+
+    function spawnKey() {
+        keySpawned = true; const k = document.getElementById('key'); k.style.display = 'block'; k.style.transform = 'scale(1.5)'; setTimeout(() => k.style.transform = 'scale(1)', 500);
+    }
+
+    function spawnMacchiato() {
+        macchiatoSpawned = true; const m = document.getElementById('macchiato'); const rx = Math.floor(Math.random() * 600) + 50; const ry = Math.random() > 0.5 ? 100 : 500; m.style.left = rx + 'px'; m.style.top = ry + 'px'; m.style.display = 'block';
+    }
+
+    function createFlowers() {
+        const container = document.getElementById('flower-container'); container.innerHTML = ''; 
+        for(let i=0; i<60; i++) {
+            let img = document.createElement('img'); img.src = 'https://i.imgur.com/FrWwCkK.png'; img.className = 'item game-obj'; img.style.width = '40px';
+            let safe = false; let attempts = 0; let rx, ry;
+            while(!safe && attempts < 10) {
+                rx = Math.floor(Math.random() * 750); ry = Math.floor(Math.random() * 550); attempts++;
+                const nearTarget = (rx > 530 && rx < 700) && (ry > 180 && ry < 350);
+                const onPath = (ry > 280 && ry < 380);
+                if (!nearTarget && !onPath) safe = true;
+            }
+            if(safe) { img.style.left = rx + 'px'; img.style.top = ry + 'px'; container.appendChild(img); }
+        }
+    }
+
+    function changeScene(sceneId) {
+        document.getElementById('scene-room').style.display = 'none';
+        document.getElementById('scene-forest').style.display = 'none';
+        document.getElementById('scene-final').style.display = 'none';
+        currentScene = sceneId; player.style.width = '64px'; player.style.height = '64px';
+        if (sceneId === 2) { document.getElementById('scene-forest').style.display = 'block'; posX = 20; posY = 300; } 
+        else if (sceneId === 3) {
+            document.getElementById('scene-final').style.display = 'block';
+            if(soundEnabled) { sounds.bgmMain.pause(); sounds.bgmFinal.currentTime = 0; sounds.bgmFinal.play().catch(e => console.log("Final müziği başlatılamadı")); }
+            createFlowers(); posX = 50; posY = 300; player.style.width = '120px'; player.style.height = '120px';
+        }
+        updatePlayerPos();
+    }
+
+    // PWA Service Worker Kaydı
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker Kayıtlı', reg))
+                .catch(err => console.log('Service Worker Hatası', err));
+        });
+    }
+</script>
+</body>
+</html>
