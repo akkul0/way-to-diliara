@@ -13,13 +13,13 @@
             padding: 0;
             width: 100vw;
             height: 100vh;
-            overflow: hidden; /* Kaydırmayı engelle */
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
             color: white;
             font-family: 'Press Start 2P', cursive;
-            user-select: none; /* Yazı seçimini engelle */
+            user-select: none;
             -webkit-touch-callout: none;
         }
 
@@ -46,8 +46,8 @@
         .game-obj {
             image-rendering: pixelated; 
             position: absolute; 
-            transition: transform 0.1s; /* Daha keskin hareket */
-            pointer-events: none; /* Resimlerin sürüklenmesini engelle */
+            transition: transform 0.1s; 
+            pointer-events: none; 
         }
         .bg { width: 100%; height: 100%; object-fit: cover; z-index: 1; }
         .character { z-index: 100; width: 64px; height: 64px; }
@@ -68,6 +68,7 @@
 
         .title-container {
             display: flex; align-items: center; margin-bottom: 20px;
+            transform: scale(0.9);
         }
         .menu-char { width: 80px; height: 80px; margin: 0 10px; }
         h1.title { color: #ffcc00; font-size: 24px; text-align: center; line-height: 1.5; }
@@ -107,14 +108,13 @@
         }
 
         /* --- MOBİL KONTROLLER (UI KATMANI) --- */
-        /* Bu katman oyunun ölçeklemesinden bağımsızdır, ekranın en üstündedir */
         #mobile-controls {
             position: fixed;
             bottom: 20px;
             left: 0;
             width: 100%;
             height: 150px;
-            pointer-events: none; /* Boşluklara tıklanınca arkaya geçsin */
+            pointer-events: none; 
             z-index: 9999;
             display: flex;
             justify-content: space-between;
@@ -125,7 +125,7 @@
         .d-pad {
             width: 150px; height: 150px;
             position: relative;
-            pointer-events: auto; /* Tuşlar tıklansın */
+            pointer-events: auto; 
         }
 
         .action-area {
@@ -145,7 +145,7 @@
         }
         .btn:active { background: rgba(255, 255, 255, 0.4); }
 
-        /* Yön Tuşları Konumlandırma */
+        /* Yön Tuşları */
         #btn-up { top: 0; left: 50px; width: 50px; height: 50px; }
         #btn-down { bottom: 0; left: 50px; width: 50px; height: 50px; }
         #btn-left { top: 50px; left: 0; width: 50px; height: 50px; }
@@ -153,7 +153,7 @@
 
         /* Aksiyon Tuşu */
         #btn-action {
-            position: static; /* Grid içinde değil */
+            position: static;
             width: 80px; height: 80px;
             border-radius: 50%;
             background: rgba(255, 50, 50, 0.3);
@@ -246,7 +246,6 @@
         const gameW = 800;
         const gameH = 600;
 
-        // Ekranın en ve boy oranına göre en uygun ölçeği bul
         const scale = Math.min(winW / gameW, winH / gameH);
         
         wrapper.style.transform = `scale(${scale})`;
@@ -270,11 +269,12 @@
     let globalVolume = 0.5;
     let soundEnabled = true;
 
-    // --- DİL VE METİNLER (ORİJİNAL) ---
+    // --- METİNLER (ORİJİNAL + RUSÇA DÜZELTME) ---
     let lang = 'tr';
     const texts = {
         tr: {
-            play: "OYNA", menu_title: "Way to<br>Diliara",
+            play: "OYNA",
+            menu_title: "Way to<br>Diliara",
             intro1: "(Başın çatlıyor... Gözlerini zorlukla açtın...)",
             intro2: "Diliara... Diliara neredesin prensesim? Seni bulmam gerek!",
             intro3: "Önce bu odadan çıkmalıyım.",
@@ -290,17 +290,29 @@
             dubai_gate_blocked: "Önce şu çikolata kılıklı bekçiyi halletmeliyim.",
             macchiato_found: "Mis gibi Macchiato! Canavar bunu sevecek.",
             final_name: "Diliara...",
-            final_love: "Ne kadar zor olursa olsun, her zaman seninle olacağım."
+            final_love: "Ne kadar zor olursa olsun, her zaman seninle olacağım.",
+            end_msg: "Tekrar Oyna (F5)"
         },
         ru: {
-            play: "ИГРАТЬ", menu_title: "Путь к<br>Дилиаре",
-            intro1: "(Голова раскалывается...)", intro2: "Дилиара... Я должен найти тебя!",
-            intro3: "Сначала нужно выбраться.", pc: "Экран разбит...", mirror: "Зеркала враги.",
-            parrot: "...", bed: "Сон не выход.", door_locked: "Заперто... Где ключ?",
-            key_found: "Ключ у меня!", dubai_stop: "Стоять! Хочу кофе...",
-            dubai_quest: "Принеси макиато.", dubai_success: "Красава. Проходи.",
-            dubai_gate_blocked: "Сначала охранник.", macchiato_found: "Отличный кофе!",
-            final_name: "Дилиара...", final_love: "Я всегда буду с тобой."
+            play: "ИГРАТЬ",
+            menu_title: "Путь к<br>Диляре", // Düzeltildi
+            intro1: "(Голова раскалывается... Ты с трудом открываешь глаза...)",
+            intro2: "Диляра... Диляра, где ты, моя принцесса? Я должен найти тебя!", // Düzeltildi
+            intro3: "Сначала нужно выбраться из этой комнаты.",
+            pc: "Экран разбит вдребезги... Как и мое сердце.",
+            mirror: "Без неё даже зеркала — мои враги.",
+            parrot: "Замолчи! Хватит повторять 'Диляра', мне больно.", // Düzeltildi
+            bed: "Сон — не выход. Я должен найти её.",
+            door_locked: "Заперто... Ключ должен быть где-то здесь.",
+            key_found: "Ключ у меня! Теперь я могу выйти.",
+            dubai_stop: "Опа, стоять! Куда лыжи навострил? Прохода нет. Слышь, братан, душа горит, кофе хочет...",
+            dubai_quest: "Принеси-ка мне макиато из леса, а я подумаю, пускать тебя или нет.",
+            dubai_success: "Во! Красава! Уважаю. Проходи, Ромео, путь свободен.",
+            dubai_gate_blocked: "Сначала нужно разобраться с этим шоколадным охранником.",
+            macchiato_found: "Отличный макиато! Монстру это понравится.",
+            final_name: "Диляра...", // Düzeltildi
+            final_love: "Как бы ни было трудно, я всегда буду с тобой.",
+            end_msg: "Играть снова (F5)"
         }
     };
 
